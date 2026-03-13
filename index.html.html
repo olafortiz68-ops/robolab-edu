@@ -1,0 +1,2226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoboLab Edu — Arquitectura de Plataforma Digital</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg0: #080c14;
+    --bg1: #0d1220;
+    --bg2: #111828;
+    --bg3: #181f2e;
+    --border: rgba(255,255,255,0.07);
+    --border-bright: rgba(255,255,255,0.15);
+    --cyan: #00e5ff;
+    --cyan-dim: rgba(0,229,255,0.15);
+    --cyan-glow: rgba(0,229,255,0.08);
+    --green: #39ff85;
+    --green-dim: rgba(57,255,133,0.12);
+    --amber: #ffb830;
+    --amber-dim: rgba(255,184,48,0.12);
+    --pink: #ff4daa;
+    --pink-dim: rgba(255,77,170,0.12);
+    --purple: #a855f7;
+    --purple-dim: rgba(168,85,247,0.12);
+    --text-primary: #e8edf5;
+    --text-secondary: #8892a4;
+    --text-muted: #4a5568;
+    --mono: 'Space Mono', monospace;
+    --display: 'Syne', sans-serif;
+    --body: 'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg0);
+    color: var(--text-primary);
+    font-family: var(--body);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* SCANLINE TEXTURE */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(8,12,20,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    height: 56px;
+    overflow-x: auto;
+  }
+
+  .nav-logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--cyan);
+    margin-right: 2rem;
+    white-space: nowrap;
+    letter-spacing: 0.05em;
+  }
+
+  .nav-logo span { color: var(--text-muted); }
+
+  nav a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 12px;
+    font-family: var(--mono);
+    padding: 0 1rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    letter-spacing: 0.03em;
+  }
+
+  nav a:hover { color: var(--cyan); border-bottom-color: var(--cyan); }
+  nav a.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+
+  /* HERO */
+  .hero {
+    padding: 5rem 2rem 3rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--cyan);
+    border: 1px solid var(--cyan-dim);
+    background: var(--cyan-glow);
+    padding: 4px 12px;
+    border-radius: 2px;
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.1em;
+  }
+
+  .hero-tag::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--cyan);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+  }
+
+  h1 .accent-cyan { color: var(--cyan); }
+  h1 .accent-green { color: var(--green); }
+
+  .hero-desc {
+    font-size: 1.05rem;
+    color: var(--text-secondary);
+    max-width: 640px;
+    line-height: 1.7;
+    margin-bottom: 2.5rem;
+  }
+
+  .hero-meta {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .meta-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+  }
+
+  .meta-value {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-primary);
+  }
+
+  /* GRID BACKGROUND ACCENT */
+  .grid-bg {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 400px;
+    height: 100%;
+    opacity: 0.04;
+    background-image:
+      linear-gradient(var(--cyan) 1px, transparent 1px),
+      linear-gradient(90deg, var(--cyan) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  /* SECTION */
+  section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .section-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    padding-top: 6px;
+    min-width: 24px;
+  }
+
+  .section-title-group h2 {
+    font-family: var(--display);
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.4rem;
+  }
+
+  .section-title-group p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    max-width: 600px;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: border-color 0.2s;
+  }
+
+  .card:hover { border-color: var(--border-bright); }
+
+  .card-cyan { border-left: 3px solid var(--cyan); }
+  .card-green { border-left: 3px solid var(--green); }
+  .card-amber { border-left: 3px solid var(--amber); }
+  .card-pink { border-left: 3px solid var(--pink); }
+  .card-purple { border-left: 3px solid var(--purple); }
+
+  /* SITE MAP */
+  .sitemap {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  .sitemap-page {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem 1.2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sitemap-page::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .sitemap-page.root::before { background: var(--cyan); }
+  .sitemap-page.lab::before { background: var(--green); }
+  .sitemap-page.tasks::before { background: var(--amber); }
+  .sitemap-page.gallery::before { background: var(--pink); }
+  .sitemap-page.about::before { background: var(--purple); }
+
+  .page-icon {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  .page-name {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .page-subs {
+    list-style: none;
+    margin-top: 0.6rem;
+    padding-left: 0.5rem;
+  }
+
+  .page-subs li {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    padding: 2px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .page-subs li::before {
+    content: '└';
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 10px;
+  }
+
+  /* WORKFLOW */
+  .workflow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+  }
+
+  .workflow-step {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 1.5rem;
+    position: relative;
+  }
+
+  .workflow-step:not(:last-child) .step-connector {
+    position: absolute;
+    left: 23px;
+    top: 56px;
+    bottom: -20px;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--step-color, var(--cyan)), transparent);
+  }
+
+  .step-num-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    position: relative;
+  }
+
+  .step-num {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+    border: 2px solid;
+    position: relative;
+    z-index: 1;
+  }
+
+  .step-content {
+    padding-bottom: 2.5rem;
+  }
+
+  .step-tool {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 2px;
+    margin-bottom: 0.6rem;
+    letter-spacing: 0.05em;
+  }
+
+  .step-tool.forms { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,184,48,0.2); }
+  .step-tool.drive { background: var(--green-dim); color: var(--green); border: 1px solid rgba(57,255,133,0.2); }
+  .step-tool.sheets { background: var(--cyan-dim); color: var(--cyan); border: 1px solid rgba(0,229,255,0.2); }
+  .step-tool.slides { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(168,85,247,0.2); }
+  .step-tool.sites { background: var(--pink-dim); color: var(--pink); border: 1px solid rgba(255,77,170,0.2); }
+  .step-tool.tinkercad { background: rgba(255,107,53,0.12); color: #ff6b35; border: 1px solid rgba(255,107,53,0.2); }
+  .step-tool.makecode { background: rgba(0,150,255,0.12); color: #0096ff; border: 1px solid rgba(0,150,255,0.2); }
+  .step-tool.arduino { background: rgba(0,180,160,0.12); color: #00b4a0; border: 1px solid rgba(0,180,160,0.2); }
+
+  .step-title {
+    font-family: var(--display);
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+  }
+
+  .step-desc {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  /* CODE BLOCK */
+  .code-block {
+    background: #050810;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1.2rem 1.5rem;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.8;
+    overflow-x: auto;
+    margin-top: 0.8rem;
+  }
+
+  .code-block .comment { color: var(--text-muted); }
+  .code-block .key { color: var(--cyan); }
+  .code-block .val { color: var(--green); }
+  .code-block .str { color: var(--amber); }
+  .code-block .tag { color: var(--pink); }
+
+  /* TOOLS GRID */
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.2rem;
+  }
+
+  .tool-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    transition: all 0.2s;
+    cursor: default;
+  }
+
+  .tool-card:hover {
+    border-color: var(--border-bright);
+    background: var(--bg3);
+    transform: translateY(-2px);
+  }
+
+  .tool-header {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .tool-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    font-family: var(--mono);
+    flex-shrink: 0;
+  }
+
+  .tool-name {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  .tool-url {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .tool-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .tool-uses {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 2px;
+    letter-spacing: 0.03em;
+  }
+
+  .tag-cyan { background: var(--cyan-dim); color: var(--cyan); }
+  .tag-green { background: var(--green-dim); color: var(--green); }
+  .tag-amber { background: var(--amber-dim); color: var(--amber); }
+  .tag-pink { background: var(--pink-dim); color: var(--pink); }
+  .tag-purple { background: var(--purple-dim); color: var(--purple); }
+
+  /* FORM CONFIG */
+  .form-preview {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 2rem;
+    color: #202124;
+    font-family: var(--body);
+    max-width: 520px;
+    border: 1px solid var(--border-bright);
+  }
+
+  .form-preview h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.4rem;
+    color: #1a73e8;
+    margin-bottom: 0.3rem;
+    font-weight: 700;
+  }
+
+  .form-preview .form-sub {
+    font-size: 0.85rem;
+    color: #5f6368;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #1a73e8;
+  }
+
+  .form-field {
+    margin-bottom: 1.2rem;
+  }
+
+  .form-field label {
+    display: block;
+    font-size: 0.85rem;
+    color: #202124;
+    margin-bottom: 0.4rem;
+    font-weight: 500;
+  }
+
+  .form-field label .required { color: #d93025; }
+
+  .form-input {
+    width: 100%;
+    height: 36px;
+    border: none;
+    border-bottom: 1px solid #dadce0;
+    background: transparent;
+    font-size: 0.9rem;
+    color: #202124;
+    padding: 0 4px;
+    outline: none;
+    font-family: var(--body);
+  }
+
+  .form-input:focus { border-bottom: 2px solid #1a73e8; }
+
+  .form-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    color: #1a73e8;
+    cursor: pointer;
+    font-family: var(--body);
+    font-weight: 500;
+  }
+
+  .form-submit {
+    background: #1a73e8;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 24px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--body);
+    margin-top: 0.5rem;
+  }
+
+  /* SHEETS MOCK */
+  .sheet-mock {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-bright);
+    max-width: 700px;
+  }
+
+  .sheet-toolbar {
+    background: #0F9D58;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sheet-toolbar span {
+    color: white;
+    font-size: 12px;
+    font-family: var(--body);
+  }
+
+  .sheet-toolbar .sheet-name {
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .sheet-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    font-family: var(--body);
+    color: #202124;
+  }
+
+  .sheet-table th {
+    background: #f3f3f3;
+    border: 1px solid #d0d0d0;
+    padding: 4px 8px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .sheet-table td {
+    border: 1px solid #e8e8e8;
+    padding: 4px 8px;
+    white-space: nowrap;
+    font-size: 11px;
+  }
+
+  .sheet-row-header {
+    background: #f8f8f8;
+    text-align: center;
+    color: #999;
+    min-width: 28px;
+    font-weight: 400;
+  }
+
+  .cell-green { background: #e6f4ea; color: #137333; }
+  .cell-yellow { background: #fef9c3; color: #856404; }
+  .cell-red { background: #fce8e6; color: #c5221f; }
+  .cell-blue { background: #e8f0fe; color: #1a56db; }
+
+  /* GALLERY SLIDES MOCK */
+  .slides-mock {
+    background: #404040;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-bright);
+    position: relative;
+  }
+
+  .slides-toolbar {
+    background: #f1f3f4;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .slides-toolbar span {
+    font-size: 11px;
+    color: #5f6368;
+    font-family: var(--body);
+  }
+
+  .slides-toolbar .slides-name {
+    font-weight: 600;
+    color: #202124;
+    font-size: 12px;
+  }
+
+  .slides-logo {
+    color: #fbbc04;
+    font-weight: 700;
+    font-size: 13px;
+    font-family: var(--display);
+  }
+
+  .slides-canvas {
+    display: flex;
+    height: 220px;
+  }
+
+  .slide-thumb-list {
+    background: #35373a;
+    width: 90px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow-y: auto;
+  }
+
+  .slide-thumb {
+    background: white;
+    border-radius: 2px;
+    height: 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: #333;
+    font-family: var(--body);
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.1s;
+    flex-shrink: 0;
+    padding: 4px;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .slide-thumb.active { border-color: #4285f4; }
+
+  .slide-main {
+    flex: 1;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .project-slide {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0a0a20 0%, #1a1a3a 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    gap: 0.5rem;
+  }
+
+  .slide-award {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: #ffd700;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+
+  .slide-project-name {
+    font-family: var(--display);
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: white;
+    text-align: center;
+  }
+
+  .slide-student {
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+  }
+
+  .slide-placeholder-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(0,229,255,0.2);
+    border: 2px solid rgba(0,229,255,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+  }
+
+  /* PALETTE */
+  .palette-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1rem;
+  }
+
+  .color-swatch {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .swatch-block {
+    height: 80px;
+    display: flex;
+    align-items: flex-end;
+    padding: 8px;
+  }
+
+  .swatch-hex {
+    font-family: var(--mono);
+    font-size: 10px;
+    background: rgba(0,0,0,0.4);
+    padding: 2px 6px;
+    border-radius: 2px;
+    color: white;
+  }
+
+  .swatch-info {
+    background: var(--bg2);
+    padding: 10px 12px;
+  }
+
+  .swatch-name {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin-bottom: 2px;
+  }
+
+  .swatch-role {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  /* TYPOGRAPHY SPECIMENS */
+  .typo-specimen {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .typo-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .typo-label span {
+    color: var(--text-muted);
+    font-style: normal;
+  }
+
+  /* LAYOUT WIREFRAME */
+  .wireframe {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    position: relative;
+  }
+
+  .wf-browser {
+    background: var(--bg1);
+    border: 1px solid var(--border-bright);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .wf-bar {
+    background: var(--bg3);
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .wf-dots { display: flex; gap: 5px; }
+  .wf-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  .wf-url {
+    flex: 1;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .wf-nav {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem 1.5rem;
+    gap: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .wf-logo-box {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--cyan);
+    font-weight: 700;
+    margin-right: auto;
+  }
+
+  .wf-nav-item {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-family: var(--body);
+    white-space: nowrap;
+  }
+
+  .wf-hero-section {
+    padding: 2rem 1.5rem;
+    background: linear-gradient(135deg, var(--bg0) 0%, var(--bg2) 100%);
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+  }
+
+  .wf-hero-text { flex: 1; display: flex; flex-direction: column; gap: 0.6rem; }
+
+  .wf-placeholder { background: var(--border); border-radius: 3px; }
+  .wf-h1 { height: 28px; width: 80%; }
+  .wf-h2 { height: 18px; width: 60%; }
+  .wf-body { height: 12px; }
+  .wf-body-short { height: 12px; width: 70%; }
+  .wf-btn { height: 32px; width: 120px; border-radius: 4px; background: var(--cyan-dim); border: 1px solid var(--cyan); }
+
+  .wf-hero-visual {
+    width: 180px;
+    height: 120px;
+    border-radius: 6px;
+    border: 1px dashed var(--border-bright);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .wf-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.8rem;
+    padding: 1.2rem 1.5rem;
+  }
+
+  .wf-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .wf-card-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    margin-bottom: 0.3rem;
+  }
+
+  /* GAMIFICATION BADGES */
+  .badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+  }
+
+  .badge-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    transition: all 0.2s;
+  }
+
+  .badge-card:hover {
+    border-color: var(--border-bright);
+    transform: translateY(-2px);
+  }
+
+  .badge-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    border: 2px solid;
+  }
+
+  .badge-name {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+
+  .badge-crit {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+
+  /* ACCORDION / DETAIL ROWS */
+  .detail-row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border);
+    align-items: start;
+  }
+
+  .detail-row:last-child { border-bottom: none; }
+
+  .detail-key {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    padding-top: 2px;
+    letter-spacing: 0.05em;
+  }
+
+  .detail-val {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  .detail-val strong {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  /* TABS */
+  .tab-bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 0.7rem 1.2rem;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    margin-bottom: -1px;
+  }
+
+  .tab-btn:hover { color: var(--text-primary); }
+  .tab-btn.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* RESPONSIVE */
+  @media (max-width: 700px) {
+    .detail-row { grid-template-columns: 1fr; }
+    .wf-cards { grid-template-columns: 1fr 1fr; }
+    .hero { padding: 3rem 1rem 2rem; }
+    section { padding: 2rem 1rem; }
+  }
+
+  /* FOOTER */
+  footer {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 2rem 4rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .footer-logo {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .footer-logo strong {
+    color: var(--cyan);
+    font-weight: 400;
+  }
+
+  .footer-note {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--body);
+  }
+
+  /* HIGHLIGHT BOX */
+  .highlight-box {
+    background: var(--cyan-glow);
+    border: 1px solid rgba(0,229,255,0.2);
+    border-radius: 6px;
+    padding: 1rem 1.2rem;
+    display: flex;
+    gap: 0.8rem;
+    align-items: flex-start;
+  }
+
+  .highlight-icon {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--cyan);
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .highlight-text {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  .highlight-text strong { color: var(--cyan); font-weight: 500; }
+
+  /* NEON LINE ACCENT */
+  .neon-line {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    margin: 0.5rem 0 1.5rem;
+    opacity: 0.4;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg1); }
+  ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">ROBOLAB<span>.edu</span></div>
+  <a href="#mapa" class="active">01. Mapa</a>
+  <a href="#flujo">02. Flujo</a>
+  <a href="#herramientas">03. Herramientas</a>
+  <a href="#aula">04. Aula Virtual</a>
+  <a href="#galeria">05. Galería</a>
+  <a href="#ux">06. UX/UI</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="grid-bg"></div>
+  <div class="hero-tag">DOCUMENTO DE ARQUITECTURA TÉCNICA</div>
+  <h1>
+    Plataforma Web<br>
+    <span class="accent-cyan">RoboLab</span> <span class="accent-green">Edu</span>
+  </h1>
+  <p class="hero-desc">
+    Arquitectura completa para una plataforma educativa de Robótica en Google Sites — 
+    costo cero, sin código, con integración total del ecosistema Google para Educación Media.
+  </p>
+  <div class="hero-meta">
+    <div class="meta-item">
+      <span class="meta-label">PLATAFORMA BASE</span>
+      <span class="meta-value">Google Sites</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">MODELO</span>
+      <span class="meta-value">No-Code / Zero Cost</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">AUDIENCIA</span>
+      <span class="meta-value">Educación Media</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">PILARES</span>
+      <span class="meta-value">3 (Robótica · Aula · Galería)</span>
+    </div>
+  </div>
+</div>
+
+<!-- 01. MAPA DEL SITIO -->
+<section id="mapa">
+  <div class="section-header">
+    <div class="section-num">01</div>
+    <div class="section-title-group">
+      <h2 style="color: var(--cyan)">Mapa del Sitio</h2>
+      <p>Estructura jerárquica completa de todas las páginas y subpáginas del Google Site.</p>
+    </div>
+  </div>
+
+  <div class="neon-line"></div>
+
+  <!-- WIREFRAME VISUAL -->
+  <div class="wireframe" style="margin-bottom: 2rem;">
+    <div class="wf-browser">
+      <div class="wf-bar">
+        <div class="wf-dots">
+          <div class="wf-dot" style="background:#ff5f57"></div>
+          <div class="wf-dot" style="background:#febc2e"></div>
+          <div class="wf-dot" style="background:#28c840"></div>
+        </div>
+        <div class="wf-url">sites.google.com/view/robolab-edu</div>
+      </div>
+      <div class="wf-nav">
+        <div class="wf-logo-box">⚡ RoboLab</div>
+        <div class="wf-nav-item">Inicio</div>
+        <div class="wf-nav-item">Laboratorio</div>
+        <div class="wf-nav-item">Zona de Entregas</div>
+        <div class="wf-nav-item">Galería</div>
+        <div class="wf-nav-item">Nosotros</div>
+      </div>
+      <div class="wf-hero-section">
+        <div class="wf-hero-text">
+          <div class="wf-placeholder wf-h1"></div>
+          <div class="wf-placeholder wf-h2"></div>
+          <div class="wf-placeholder wf-body" style="width:90%"></div>
+          <div class="wf-placeholder wf-body wf-body-short"></div>
+          <div class="wf-btn" style="margin-top:0.3rem"></div>
+        </div>
+        <div class="wf-hero-visual">BANNER / VIDEO</div>
+      </div>
+      <div class="wf-cards">
+        <div class="wf-card">
+          <div class="wf-card-icon" style="background: var(--cyan-dim); border: 1px solid var(--cyan)"></div>
+          <div class="wf-placeholder wf-h2" style="width:80%"></div>
+          <div class="wf-placeholder wf-body" style="width:100%"></div>
+        </div>
+        <div class="wf-card">
+          <div class="wf-card-icon" style="background: var(--green-dim); border: 1px solid var(--green)"></div>
+          <div class="wf-placeholder wf-h2" style="width:80%"></div>
+          <div class="wf-placeholder wf-body" style="width:100%"></div>
+        </div>
+        <div class="wf-card">
+          <div class="wf-card-icon" style="background: var(--pink-dim); border: 1px solid var(--pink)"></div>
+          <div class="wf-placeholder wf-h2" style="width:80%"></div>
+          <div class="wf-placeholder wf-body" style="width:100%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SITEMAP CARDS -->
+  <div class="sitemap">
+
+    <div class="sitemap-page root">
+      <span class="page-icon">/index</span>
+      <div class="page-name" style="color:var(--cyan)">🏠 Inicio</div>
+      <ul class="page-subs">
+        <li>Presentación del laboratorio</li>
+        <li>Accesos rápidos (3 pilares)</li>
+        <li>Noticias / Últimos proyectos</li>
+        <li>Video de bienvenida embed</li>
+      </ul>
+    </div>
+
+    <div class="sitemap-page lab">
+      <span class="page-icon">/laboratorio</span>
+      <div class="page-name" style="color:var(--green)">🔬 Laboratorio de Robótica</div>
+      <ul class="page-subs">
+        <li>Presentación del lab</li>
+        <li>Mapa de herramientas</li>
+        <li>Guía de inicio rápido</li>
+      </ul>
+    </div>
+
+    <div class="sitemap-page lab">
+      <span class="page-icon">/laboratorio/tinkercad</span>
+      <div class="page-name" style="color:var(--green)">🔧 Tinkercad</div>
+      <ul class="page-subs">
+        <li>¿Qué es Tinkercad?</li>
+        <li>Tutorial paso a paso embed</li>
+        <li>Botón → Abrir Tinkercad</li>
+        <li>Proyectos de ejemplo</li>
+        <li>Retos de la semana</li>
+      </ul>
+    </div>
+
+    <div class="sitemap-page lab">
+      <span class="page-icon">/laboratorio/makecode</span>
+      <div class="page-name" style="color:var(--green)">🎮 MakeCode</div>
+      <ul class="page-subs">
+        <li>¿Qué es MakeCode?</li>
+        <li>Tutorial bloques embed</li>
+        <li>Botón → Abrir MakeCode</li>
+        <li>Proyectos de ejemplo</li>
+        <li>Retos de la semana</li>
+      </ul>
+    </div>
+
+    <div class="sitemap-page lab">
+      <span class="page-icon">/laboratorio/arduinoblocks</span>
+      <div class="page-name" style="color:var(--green)">⚡ Arduinoblocks</div>
+      <ul class="page-subs">
+        <li>¿Qué es Arduinoblocks?</li>
+        <li>Tutorial visual embed</li>
+        <li>Botón → Abrir Arduinoblocks</li>
+        <li>Proyectos de ejemplo</li>
+        <li>Conexión con Tinkercad</li>
+      </ul>
+    </div>
+
+    <div class="sitemap-page tasks">
+      <span class="page-icon">/entregas</span>
+      <div class="page-name" style="color:var(--amber)">📬 Zona de Entregas</div>
+      <ul class="page-subs">
+        <li>Google Form embed (principal)</li>
+        <li>Instrucciones de entrega</li>
+        <li>Estado de mis entregas</li>
+        <li>Calendario de plazos</li>
+      </ul>
+    </div>
+
+    <div class="sitemap-page tasks">
+      <span class="page-icon">/entregas/guia</span>
+      <div class="page-name" style="color:var(--amber)">📋 Cómo Entregar</div>
+      <ul class="page-subs">
+        <li>Video tutorial paso a paso</li>
+        <li>FAQ de entregas</li>
+        <li>Rúbrica de evaluación</li>
+      </ul>
+    </div>
+
+    <div class="sitemap-page gallery">
+      <span class="page-icon">/galeria</span>
+      <div class="page-name" style="color:var(--pink)">🏆 Galería de Inventores</div>
+      <ul class="page-subs">
+        <li>Carrusel Google Slides embed</li>
+        <li>Hall de la Fama</li>
+        <li>Tabla de clasificación</li>
+        <li>Sistema de insignias</li>
+      </ul>
+    </div>
+
+    <div class="sitemap-page about">
+      <span class="page-icon">/nosotros</span>
+      <div class="page-name" style="color:var(--purple)">👥 Nosotros</div>
+      <ul class="page-subs">
+        <li>Misión del laboratorio</li>
+        <li>Equipo docente</li>
+        <li>Contacto</li>
+        <li>Normas del lab</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<!-- 02. FLUJO DE TAREAS -->
+<section id="flujo">
+  <div class="section-header">
+    <div class="section-num">02</div>
+    <div class="section-title-group">
+      <h2 style="color: var(--green)">Diseño de Flujo de Tareas</h2>
+      <p>Workflow completo desde que el estudiante termina su proyecto hasta que aparece en la Galería de Inventores.</p>
+    </div>
+  </div>
+
+  <div class="neon-line" style="background: linear-gradient(90deg, transparent, var(--green), transparent);"></div>
+
+  <div class="workflow">
+
+    <!-- PASO 1 -->
+    <div class="workflow-step" style="--step-color: var(--green)">
+      <div class="step-num-wrap">
+        <div class="step-num" style="background:var(--green-dim); border-color:var(--green); color:var(--green)">01</div>
+        <div class="step-connector"></div>
+      </div>
+      <div class="step-content">
+        <span class="step-tool tinkercad">⬡ TINKERCAD / MAKECODE / ARDUINOBLOCKS</span>
+        <div class="step-title">El estudiante completa su proyecto en la herramienta</div>
+        <p class="step-desc">
+          El estudiante finaliza su circuito en <strong>Tinkercad</strong>, su programa de bloques en <strong>MakeCode</strong> 
+          o su sketch visual en <strong>Arduinoblocks</strong>. Hace capturas de pantalla del diseño y del simulador en funcionamiento.
+          Exporta el archivo del proyecto (link compartible de Tinkercad, .hex de MakeCode, o imagen de Arduinoblocks).
+        </p>
+      </div>
+    </div>
+
+    <!-- PASO 2 -->
+    <div class="workflow-step" style="--step-color: var(--amber)">
+      <div class="step-num-wrap">
+        <div class="step-num" style="background:var(--amber-dim); border-color:var(--amber); color:var(--amber)">02</div>
+        <div class="step-connector"></div>
+      </div>
+      <div class="step-content">
+        <span class="step-tool forms">▲ GOOGLE FORMS</span>
+        <div class="step-title">El estudiante envía su entrega por Google Forms</div>
+        <p class="step-desc">
+          En la página "Zona de Entregas" del Google Site, el estudiante ve el formulario embebido. Completa: 
+          nombre completo, curso, nombre del proyecto, descripción (máx. 200 palabras), 
+          enlace al proyecto, y sube hasta 3 capturas de pantalla directamente desde Google Drive.
+        </p>
+        <div class="code-block">
+<span class="comment"># Campos clave del Google Form</span>
+<span class="key">CAMPO 1:</span> <span class="val">Nombre completo</span> → <span class="str">Texto corto (obligatorio)</span>
+<span class="key">CAMPO 2:</span> <span class="val">Curso / Grado</span> → <span class="str">Desplegable (1°A, 1°B... 4°D)</span>
+<span class="key">CAMPO 3:</span> <span class="val">Herramienta usada</span> → <span class="str">Opción múltiple (Tinkercad / MakeCode / Arduinoblocks)</span>
+<span class="key">CAMPO 4:</span> <span class="val">Nombre del proyecto</span> → <span class="str">Texto corto (obligatorio)</span>
+<span class="key">CAMPO 5:</span> <span class="val">Descripción del proyecto</span> → <span class="str">Párrafo (máx. 200 palabras)</span>
+<span class="key">CAMPO 6:</span> <span class="val">Enlace al proyecto</span> → <span class="str">URL (validación automática)</span>
+<span class="key">CAMPO 7:</span> <span class="val">Captura 1 (obligatoria)</span> → <span class="str">Subida de archivo → Google Drive</span>
+<span class="key">CAMPO 8:</span> <span class="val">Captura 2 (opcional)</span> → <span class="str">Subida de archivo → Google Drive</span>
+<span class="key">CAMPO 9:</span> <span class="val">¿Deseas postularte a la Galería?</span> → <span class="str">Sí / No</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 3 -->
+    <div class="workflow-step" style="--step-color: var(--cyan)">
+      <div class="step-num-wrap">
+        <div class="step-num" style="background:var(--cyan-dim); border-color:var(--cyan); color:var(--cyan)">03</div>
+        <div class="step-connector"></div>
+      </div>
+      <div class="step-content">
+        <span class="step-tool sheets">▦ GOOGLE SHEETS</span>
+        <div class="step-title">La respuesta llega automáticamente a Google Sheets</div>
+        <p class="step-desc">
+          Google Forms registra cada entrega en una hoja de cálculo vinculada. El docente ve todas las 
+          columnas generadas automáticamente: marca de tiempo, nombre, curso, herramienta, proyecto, descripción, 
+          enlace y las imágenes subidas (como links de Drive). El docente agrega columnas manuales: 
+          <strong>Calificación</strong>, <strong>Estado</strong>, <strong>Apto para Galería</strong> y <strong>Comentarios</strong>.
+        </p>
+      </div>
+    </div>
+
+    <!-- PASO 4 -->
+    <div class="workflow-step" style="--step-color: var(--amber)">
+      <div class="step-num-wrap">
+        <div class="step-num" style="background:var(--amber-dim); border-color:var(--amber); color:var(--amber)">04</div>
+        <div class="step-connector"></div>
+      </div>
+      <div class="step-content">
+        <span class="step-tool forms">★ EVALUACIÓN DOCENTE</span>
+        <div class="step-title">El docente revisa y selecciona proyectos destacados</div>
+        <p class="step-desc">
+          El docente revisa cada proyecto en la Google Sheet, abre los enlaces y las imágenes. 
+          Pone la nota en la columna "Calificación", cambia el "Estado" a Revisado / Aprobado / Con correcciones, 
+          y marca "SÍ" en la columna "Apto para Galería" para los mejores trabajos.
+          Opcionalmente puede usar Google Forms con "Enviar respuesta de correo" para notificar al estudiante.
+        </p>
+      </div>
+    </div>
+
+    <!-- PASO 5 -->
+    <div class="workflow-step" style="--step-color: var(--purple)">
+      <div class="step-num-wrap">
+        <div class="step-num" style="background:var(--purple-dim); border-color:var(--purple); color:var(--purple)">05</div>
+        <div class="step-connector"></div>
+      </div>
+      <div class="step-content">
+        <span class="step-tool slides">◈ GOOGLE SLIDES</span>
+        <div class="step-title">El docente crea la diapositiva del proyecto en Google Slides</div>
+        <p class="step-desc">
+          Para los proyectos marcados como "Apto para Galería", el docente abre la presentación 
+          "Galería de Inventores" en Google Slides (que tiene un template fijo). Duplica una diapositiva de plantilla 
+          y rellena los datos: nombre del inventor, nombre del proyecto, descripción corta, insignia obtenida, 
+          y la captura de pantalla del proyecto ya subida en Drive.
+        </p>
+      </div>
+    </div>
+
+    <!-- PASO 6 -->
+    <div class="workflow-step" style="--step-color: var(--pink)">
+      <div class="step-num-wrap">
+        <div class="step-num" style="background:var(--pink-dim); border-color:var(--pink); color:var(--pink)">06</div>
+      </div>
+      <div class="step-content">
+        <span class="step-tool sites">◎ GOOGLE SITES</span>
+        <div class="step-title">El proyecto aparece automáticamente en la Galería del Site</div>
+        <p class="step-desc">
+          La presentación de Google Slides está embebida en la página "Galería de Inventores" del Google Site 
+          en modo presentación automática. Al guardar la nueva diapositiva en Google Slides, 
+          <strong>el carrusel del Site se actualiza en tiempo real sin necesidad de editar el Site</strong>. 
+          Los estudiantes ven su proyecto publicado en la próxima visita.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- 03. HERRAMIENTAS DE ROBÓTICA -->
+<section id="herramientas">
+  <div class="section-header">
+    <div class="section-num">03</div>
+    <div class="section-title-group">
+      <h2 style="color: var(--amber)">Herramientas de Robótica</h2>
+      <p>Integración visual e instrucciones para cada herramienta del Laboratorio Digital.</p>
+    </div>
+  </div>
+
+  <div class="neon-line" style="background: linear-gradient(90deg, transparent, var(--amber), transparent);"></div>
+
+  <div class="tools-grid">
+
+    <div class="tool-card card-cyan">
+      <div class="tool-header">
+        <div class="tool-logo" style="background: rgba(255,107,53,0.15); color: #ff6b35; border: 1px solid rgba(255,107,53,0.3)">TC</div>
+        <div>
+          <div class="tool-name">Tinkercad</div>
+          <div class="tool-url">tinkercad.com</div>
+        </div>
+      </div>
+      <p class="tool-desc">
+        Simulador online de circuitos electrónicos y modelado 3D. Ideal para prototipar antes de construir, 
+        sin necesidad de componentes físicos. Permite simular Arduino con código real.
+      </p>
+      <div class="tool-uses">
+        <span class="tag tag-cyan">Circuitos</span>
+        <span class="tag tag-cyan">3D</span>
+        <span class="tag tag-cyan">Simulación Arduino</span>
+        <span class="tag tag-cyan">Gratuito</span>
+      </div>
+      <div class="detail-row" style="border-bottom:none; padding: 0.5rem 0 0;">
+        <div class="detail-key">CÓMO EMBEBER</div>
+        <div class="detail-val">Insertar YouTube con tutorial + botón de enlace externo en Google Sites → "Botón"</div>
+      </div>
+    </div>
+
+    <div class="tool-card card-green">
+      <div class="tool-header">
+        <div class="tool-logo" style="background: rgba(0,150,255,0.15); color: #0096ff; border: 1px solid rgba(0,150,255,0.3)">MC</div>
+        <div>
+          <div class="tool-name">MakeCode</div>
+          <div class="tool-url">makecode.com</div>
+        </div>
+      </div>
+      <p class="tool-desc">
+        Plataforma de programación por bloques de Microsoft para micro:bit, Arduino y otros dispositivos. 
+        Interfaz drag-and-drop con simulador integrado. Exporta código JavaScript o C++ real.
+      </p>
+      <div class="tool-uses">
+        <span class="tag tag-green">Bloques</span>
+        <span class="tag tag-green">micro:bit</span>
+        <span class="tag tag-green">Simulador</span>
+        <span class="tag tag-green">Microsoft</span>
+      </div>
+      <div class="detail-row" style="border-bottom:none; padding: 0.5rem 0 0;">
+        <div class="detail-key">CÓMO EMBEBER</div>
+        <div class="detail-val">MakeCode permite embed directo via iframe — pegar código HTML en bloque Google Sites</div>
+      </div>
+    </div>
+
+    <div class="tool-card card-amber">
+      <div class="tool-header">
+        <div class="tool-logo" style="background: rgba(0,180,160,0.15); color: #00b4a0; border: 1px solid rgba(0,180,160,0.3)">AB</div>
+        <div>
+          <div class="tool-name">Arduinoblocks</div>
+          <div class="tool-url">arduinoblocks.com</div>
+        </div>
+      </div>
+      <p class="tool-desc">
+        Programación visual basada en Blockly para placas Arduino y similares. Conecta bloques gráficos 
+        que generan código C++ compilable. Soporta sensores, motores, pantallas LCD y módulos IoT.
+      </p>
+      <div class="tool-uses">
+        <span class="tag tag-amber">Arduino</span>
+        <span class="tag tag-amber">Visual</span>
+        <span class="tag tag-amber">IoT</span>
+        <span class="tag tag-amber">Español</span>
+      </div>
+      <div class="detail-row" style="border-bottom:none; padding: 0.5rem 0 0;">
+        <div class="detail-key">CÓMO EMBEBER</div>
+        <div class="detail-val">Captura + enlace externo. No soporta embed directo — usar video tutorial de YouTube en el Site</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ESTRUCTURA DE SUBPÁGINA -->
+  <div style="margin-top: 2rem;">
+    <p style="font-family: var(--mono); font-size: 11px; color: var(--text-muted); margin-bottom: 1rem; letter-spacing: 0.05em;">TEMPLATE DE SUBPÁGINA PARA CADA HERRAMIENTA</p>
+    <div class="card card-green">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab(this,'herr-secciones')">Secciones</button>
+        <button class="tab-btn" onclick="switchTab(this,'herr-embed')">Código Embed MakeCode</button>
+        <button class="tab-btn" onclick="switchTab(this,'herr-checklist')">Checklist de Subpágina</button>
+      </div>
+
+      <div id="herr-secciones" class="tab-panel active">
+        <div class="detail-row">
+          <div class="detail-key">SECCIÓN 1</div>
+          <div class="detail-val"><strong>Hero de herramienta:</strong> Nombre, logo, descripción en 2 líneas y botón grande "Abrir [Herramienta] →"</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-key">SECCIÓN 2</div>
+          <div class="detail-val"><strong>Video tutorial:</strong> YouTube embed con tutorial oficial en español (ajuste 100% ancho)</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-key">SECCIÓN 3</div>
+          <div class="detail-val"><strong>Guía rápida visual:</strong> 3-4 pasos con iconos usando Google Slides embed o imágenes con texto</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-key">SECCIÓN 4</div>
+          <div class="detail-val"><strong>Reto de la semana:</strong> Descripción del proyecto asignado + fecha de entrega + botón a Zona de Entregas</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-key">SECCIÓN 5</div>
+          <div class="detail-val"><strong>Proyectos de ejemplo:</strong> Galería de imágenes de proyectos anteriores (Google Fotos embed)</div>
+        </div>
+      </div>
+
+      <div id="herr-embed" class="tab-panel">
+        <div class="code-block">
+<span class="comment">&lt;!-- EMBED DE MAKECODE EN GOOGLE SITES --&gt;</span>
+<span class="comment">&lt;!-- En Google Sites: Insertar → Embed → Pegar este código --&gt;</span>
+
+<span class="tag">&lt;div</span> <span class="key">style</span>=<span class="str">"position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;"</span><span class="tag">&gt;</span>
+  <span class="tag">&lt;iframe</span>
+    <span class="key">src</span>=<span class="str">"https://makecode.microbit.org/#pub:_CODIGO_PROYECTO"</span>
+    <span class="key">style</span>=<span class="str">"position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"</span>
+    <span class="key">allowfullscreen</span><span class="tag">&gt;</span>
+  <span class="tag">&lt;/iframe&gt;</span>
+<span class="tag">&lt;/div&gt;</span>
+
+<span class="comment">&lt;!-- Reemplazar _CODIGO_PROYECTO por el ID del proyecto compartido --&gt;</span>
+<span class="comment">&lt;!-- TINKERCAD embed (el embed share URL de cada circuito) --&gt;</span>
+<span class="tag">&lt;iframe</span>
+  <span class="key">src</span>=<span class="str">"https://www.tinkercad.com/embed/XXXXXXXX"</span>
+  <span class="key">width</span>=<span class="str">"100%"</span> <span class="key">height</span>=<span class="str">"500"</span>
+  <span class="key">frameborder</span>=<span class="str">"0"</span>
+  <span class="key">scrolling</span>=<span class="str">"no"</span>
+  <span class="key">allowfullscreen</span><span class="tag">&gt;</span>
+<span class="tag">&lt;/iframe&gt;</span>
+        </div>
+      </div>
+
+      <div id="herr-checklist" class="tab-panel">
+        <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+          <div style="display: flex; gap: 0.8rem; align-items: center; font-size: 0.85rem; color: var(--text-secondary);">
+            <span style="color: var(--green); font-family: var(--mono);">✓</span> Logo e imagen representativa de la herramienta
+          </div>
+          <div style="display: flex; gap: 0.8rem; align-items: center; font-size: 0.85rem; color: var(--text-secondary);">
+            <span style="color: var(--green); font-family: var(--mono);">✓</span> Botón de acceso directo (URL externa) visible en la parte superior
+          </div>
+          <div style="display: flex; gap: 0.8rem; align-items: center; font-size: 0.85rem; color: var(--text-secondary);">
+            <span style="color: var(--green); font-family: var(--mono);">✓</span> Video tutorial en español de menos de 10 minutos
+          </div>
+          <div style="display: flex; gap: 0.8rem; align-items: center; font-size: 0.85rem; color: var(--text-secondary);">
+            <span style="color: var(--green); font-family: var(--mono);">✓</span> PDF descargable con guía rápida (Google Drive embed)
+          </div>
+          <div style="display: flex; gap: 0.8rem; align-items: center; font-size: 0.85rem; color: var(--text-secondary);">
+            <span style="color: var(--green); font-family: var(--mono);">✓</span> Descripción del reto/proyecto asignado para esa semana
+          </div>
+          <div style="display: flex; gap: 0.8rem; align-items: center; font-size: 0.85rem; color: var(--text-secondary);">
+            <span style="color: var(--green); font-family: var(--mono);">✓</span> Enlace visible a la Zona de Entregas
+          </div>
+          <div style="display: flex; gap: 0.8rem; align-items: center; font-size: 0.85rem; color: var(--text-secondary);">
+            <span style="color: var(--green); font-family: var(--mono);">✓</span> Fecha de plazo de entrega claramente visible
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 04. AULA VIRTUAL -->
+<section id="aula">
+  <div class="section-header">
+    <div class="section-num">04</div>
+    <div class="section-title-group">
+      <h2 style="color: var(--amber)">Configuración del Aula Virtual</h2>
+      <p>Sistema completo de Google Form + Google Sheet para recepción de entregas y gestión de calificaciones.</p>
+    </div>
+  </div>
+
+  <div class="neon-line" style="background: linear-gradient(90deg, transparent, var(--amber), transparent);"></div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; flex-wrap: wrap;">
+
+    <!-- FORM PREVIEW -->
+    <div>
+      <p style="font-family: var(--mono); font-size: 11px; color: var(--text-muted); margin-bottom: 1rem; letter-spacing: 0.05em;">MOCKUP: GOOGLE FORM (VISTA ESTUDIANTE)</p>
+      <div class="form-preview">
+        <h3>📬 Entrega de Proyecto — RoboLab</h3>
+        <div class="form-sub">Completa todos los campos para registrar tu proyecto. Las imágenes se guardan automáticamente en Google Drive del laboratorio.</div>
+
+        <div class="form-field">
+          <label>Nombre completo <span class="required">*</span></label>
+          <input class="form-input" type="text" placeholder="Ej: María García López">
+        </div>
+
+        <div class="form-field">
+          <label>Curso <span class="required">*</span></label>
+          <select class="form-input" style="border:1px solid #dadce0; border-radius:4px; height:36px; cursor:pointer; -webkit-appearance:auto;">
+            <option>1° Año A</option>
+            <option>1° Año B</option>
+            <option>2° Año A</option>
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label>Herramienta utilizada <span class="required">*</span></label>
+          <div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
+            <label style="font-weight:400; display:flex; align-items:center; gap:8px; cursor:pointer"><input type="radio" name="tool"> Tinkercad (Circuitos / 3D)</label>
+            <label style="font-weight:400; display:flex; align-items:center; gap:8px; cursor:pointer"><input type="radio" name="tool"> MakeCode (Bloques)</label>
+            <label style="font-weight:400; display:flex; align-items:center; gap:8px; cursor:pointer"><input type="radio" name="tool"> Arduinoblocks</label>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label>Nombre del proyecto <span class="required">*</span></label>
+          <input class="form-input" type="text" placeholder="Ej: Semáforo inteligente con sensor">
+        </div>
+
+        <div class="form-field">
+          <label>Captura de pantalla del proyecto <span class="required">*</span></label>
+          <button class="form-upload-btn">📎 Subir archivo</button>
+          <div style="font-size:11px; color:#5f6368; margin-top:4px;">Solo imágenes (PNG, JPG). Máx. 5 MB.</div>
+        </div>
+
+        <div class="form-field">
+          <label>¿Deseas postularte a la Galería de Inventores?</label>
+          <div style="display:flex; gap:16px; margin-top:4px;">
+            <label style="font-weight:400; display:flex; align-items:center; gap:6px; cursor:pointer"><input type="radio" name="galeria"> ¡Sí, quiero!</label>
+            <label style="font-weight:400; display:flex; align-items:center; gap:6px; cursor:pointer"><input type="radio" name="galeria"> No por ahora</label>
+          </div>
+        </div>
+
+        <button class="form-submit">Enviar entrega →</button>
+      </div>
+    </div>
+
+    <!-- CONFIG TÉCNICA -->
+    <div style="display:flex; flex-direction:column; gap:1.5rem;">
+
+      <div>
+        <p style="font-family: var(--mono); font-size: 11px; color: var(--text-muted); margin-bottom: 1rem; letter-spacing: 0.05em;">CONFIGURACIÓN TÉCNICA DEL FORM</p>
+        <div class="card card-amber">
+          <div class="detail-row">
+            <div class="detail-key">PASO 1</div>
+            <div class="detail-val">Crear Form en <strong>drive.google.com</strong> → Nuevo → Google Forms</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-key">PASO 2</div>
+            <div class="detail-val">En ajustes: Activar <strong>"Recopilar direcciones de email"</strong> para tener el contacto del estudiante</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-key">PASO 3</div>
+            <div class="detail-val">Subida de archivos: Tipos = imágenes; Archivos máx. = 5; Tamaño máx. = 5 MB por archivo</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-key">PASO 4</div>
+            <div class="detail-val">Pestaña Respuestas → ícono Sheets → <strong>"Crear nueva hoja de cálculo"</strong> → Nombre: "RoboLab — Entregas"</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-key">PASO 5</div>
+            <div class="detail-val">Embeber en Google Sites: Insertar → Embed → Pegar URL de publicación del Form</div>
+          </div>
+          <div class="detail-row" style="border-bottom:none">
+            <div class="detail-key">ALTERNATIVA</div>
+            <div class="detail-val">Insertar → Forms → Seleccionar el form de Drive (más sencillo y sin código)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="highlight-box">
+        <div class="highlight-icon">ℹ</div>
+        <div class="highlight-text">
+          <strong>Truco clave:</strong> Activar en Form → Configuración → <strong>"Enviar respuestas de correo a los encuestados"</strong> 
+          envía automáticamente una confirmación de recibo al email del estudiante, 
+          sin ninguna configuración adicional.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SHEETS MOCK -->
+  <div style="margin-top: 2.5rem;">
+    <p style="font-family: var(--mono); font-size: 11px; color: var(--text-muted); margin-bottom: 1rem; letter-spacing: 0.05em;">MOCKUP: GOOGLE SHEETS — VISTA DOCENTE</p>
+    <div class="sheet-mock">
+      <div class="sheet-toolbar">
+        <span class="sheet-name">RoboLab — Entregas</span>
+        <span style="margin-left:auto; opacity:0.8">Google Sheets</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="sheet-table">
+          <thead>
+            <tr>
+              <th class="sheet-row-header">#</th>
+              <th style="background:#e8f5e9; color:#2e7d32">Marca de tiempo</th>
+              <th style="background:#e8f5e9; color:#2e7d32">Email</th>
+              <th style="background:#e8f5e9; color:#2e7d32">Nombre completo</th>
+              <th style="background:#e8f5e9; color:#2e7d32">Curso</th>
+              <th style="background:#e8f5e9; color:#2e7d32">Herramienta</th>
+              <th style="background:#e8f5e9; color:#2e7d32">Proyecto</th>
+              <th style="background:#e3f2fd; color:#1565c0">Calificación ✏️</th>
+              <th style="background:#e3f2fd; color:#1565c0">Estado ✏️</th>
+              <th style="background:#fce4ec; color:#c62828">Apto Galería ✏️</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="sheet-row-header">1</td>
+              <td>15/05 09:32</td>
+              <td>m.garcia@...</td>
+              <td>María García</td>
+              <td>2°A</td>
+              <td>Tinkercad</td>
+              <td>Semáforo inteligente</td>
+              <td class="cell-green">9.2</td>
+              <td class="cell-green">Aprobado ✓</td>
+              <td class="cell-blue">SÍ ⭐</td>
+            </tr>
+            <tr>
+              <td class="sheet-row-header">2</td>
+              <td>15/05 10:14</td>
+              <td>j.perez@...</td>
+              <td>Juan Pérez</td>
+              <td>2°B</td>
+              <td>MakeCode</td>
+              <td>Robot esquiva-obstáculos</td>
+              <td class="cell-yellow">7.5</td>
+              <td class="cell-yellow">Con correcciones</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td class="sheet-row-header">3</td>
+              <td>16/05 08:55</td>
+              <td>a.lopez@...</td>
+              <td>Ana López</td>
+              <td>1°A</td>
+              <td>Arduinoblocks</td>
+              <td>Termómetro digital</td>
+              <td class="cell-green">8.8</td>
+              <td class="cell-green">Aprobado ✓</td>
+              <td class="cell-blue">SÍ ⭐</td>
+            </tr>
+            <tr>
+              <td class="sheet-row-header">4</td>
+              <td>16/05 11:20</td>
+              <td>c.mora@...</td>
+              <td>Carlos Mora</td>
+              <td>3°A</td>
+              <td>Tinkercad</td>
+              <td>Sistema de riego</td>
+              <td class="cell-red">Pendiente</td>
+              <td class="cell-red">Sin revisar</td>
+              <td>—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="background:#f8f9fa; padding:6px 12px; font-size:11px; color:#5f6368; font-family: var(--body);">
+        🟢 Generado automáticamente por Google Forms &nbsp;|&nbsp; 🔵 Columnas manuales del docente
+      </div>
+    </div>
+  </div>
+
+  <!-- COLUMNAS MANUALES -->
+  <div style="margin-top: 1.5rem;">
+    <div class="code-block">
+<span class="comment"># Columnas manuales a agregar por el docente en Google Sheets</span>
+<span class="comment"># (agregar a la derecha de las columnas automáticas del Form)</span>
+
+<span class="key">COLUMNA I:</span>  <span class="val">Calificación</span>     → <span class="str">Número (0-10) — formato: 1 decimal</span>
+<span class="key">COLUMNA J:</span>  <span class="val">Estado</span>           → <span class="str">Lista: Sin revisar / En revisión / Aprobado / Con correcciones</span>
+<span class="key">COLUMNA K:</span>  <span class="val">Apto para Galería</span> → <span class="str">Lista: SÍ / NO</span>
+<span class="key">COLUMNA L:</span>  <span class="val">Comentarios</span>      → <span class="str">Texto libre (feedback para el estudiante)</span>
+<span class="key">COLUMNA M:</span>  <span class="val">Fecha de revisión</span> → <span class="str">Fecha (rellenar al revisar)</span>
+
+<span class="comment"># TIP: Usar Formato condicional en Sheets para colorear las celdas:</span>
+<span class="comment"># Aprobado = verde | Con correcciones = amarillo | Sin revisar = rojo | Apto Galería = azul</span>
+    </div>
+  </div>
+</section>
+
+<!-- 05. GALERÍA DE INVENTORES -->
+<section id="galeria">
+  <div class="section-header">
+    <div class="section-num">05</div>
+    <div class="section-title-group">
+      <h2 style="color: var(--pink)">Galería de Inventores</h2>
+      <p>Sistema de gamificación con Google Slides embebido y actualización automática del carrusel.</p>
+    </div>
+  </div>
+
+  <div class="neon-line" style="background: linear-gradient(90deg, transparent, var(--pink), transparent);"></div>
+
+  <!-- SLIDES MOCK -->
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:2rem; align-items:start;">
+
+    <div>
+      <p style="font-family: var(--mono); font-size: 11px; color: var(--text-muted); margin-bottom: 1rem; letter-spacing: 0.05em;">MOCKUP: GOOGLE SLIDES EMBEBIDO EN SITES</p>
+      <div class="slides-mock">
+        <div class="slides-toolbar">
+          <span class="slides-logo">◈</span>
+          <span class="slides-name">Galería de Inventores — RoboLab 2025</span>
+          <span style="margin-left:auto">Compartido ✓</span>
+        </div>
+        <div class="slides-canvas">
+          <div class="slide-thumb-list">
+            <div class="slide-thumb active">🏆 Portada</div>
+            <div class="slide-thumb">★ María G.</div>
+            <div class="slide-thumb">★ Ana L.</div>
+            <div class="slide-thumb">☆ Pedro M.</div>
+            <div class="slide-thumb" style="background:#e8f4fe; border-color:#4285f4">+ nuevo</div>
+          </div>
+          <div class="slide-main">
+            <div class="project-slide">
+              <div class="slide-award">⭐ INVENTOR DESTACADO</div>
+              <div class="slide-placeholder-icon">🤖</div>
+              <div class="slide-project-name">Semáforo Inteligente<br>con Sensor</div>
+              <div class="slide-student">María García — 2° Año A</div>
+              <div style="margin-top:8px; display:flex; gap:6px; justify-content:center;">
+                <span style="font-family:var(--mono); font-size:9px; background:rgba(0,229,255,0.2); color:#00e5ff; padding:2px 8px; border-radius:2px;">Tinkercad</span>
+                <span style="font-family:var(--mono); font-size:9px; background:rgba(255,215,0,0.2); color:#ffd700; padding:2px 8px; border-radius:2px;">⭐ 9.2/10</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:1rem;">
+        <div class="code-block">
+<span class="comment"># CÓMO EMBEBER SLIDES EN GOOGLE SITES</span>
+<span class="comment"># 1. Abrir la presentación en Google Slides</span>
+<span class="comment"># 2. Archivo → Compartir → Publicar en la web</span>
+<span class="comment"># 3. Seleccionar "Presentación de diapositivas" (autoavance)</span>
+<span class="comment"># 4. Copiar el código &lt;iframe&gt; generado</span>
+
+<span class="comment"># En Google Sites:</span>
+<span class="comment"># Insertar → Presentaciones → Seleccionar desde Drive</span>
+<span class="comment"># (NO necesitas pegar código — Sites lo hace automáticamente)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONFIGURACIÓN -->
+    <div style="display:flex; flex-direction:column; gap:1.5rem;">
+
+      <div class="card card-pink">
+        <p style="font-family: var(--mono); font-size: 11px; color: var(--text-muted); margin-bottom: 1rem; letter-spacing: 0.05em;">CONFIGURACIÓN DEL CARRUSEL AUTOMÁTICO</p>
+        <div class="detail-row">
+          <div class="detail-key">AUTOAVANCE</div>
+          <div class="detail-val">Al publicar: seleccionar avance cada <strong>5 segundos</strong> (óptimo para lectura rápida en aula)</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-key">ACTUALIZACIÓN</div>
+          <div class="detail-val">Al guardar una nueva diapositiva en Slides, <strong>el embed en Sites se actualiza automáticamente</strong> en minutos. Sin tocar el Site.</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-key">TEMPLATE</div>
+          <div class="detail-val">Crear una diapositiva "PLANTILLA" al final. El docente la duplica y rellena datos para cada inventor.</div>
+        </div>
+        <div class="detail-row" style="border-bottom:none">
+          <div class="detail-key">TAMAÑO</div>
+          <div class="detail-val">Configurar presentación en <strong>16:9 — 1280×720px</strong>. Usar modo oscuro con acento neón para coherencia visual.</div>
+        </div>
+      </div>
+
+      <!-- BADGES / GAMIFICACIÓN -->
+      <div>
+        <p style="font-family: var(--mono); font-size: 11px; color: var(--text-muted); margin-bottom: 1rem; letter-spacing: 0.05em;">SISTEMA DE INSIGNIAS (GAMIFICACIÓN)</p>
+        <div class="badges-grid">
+          <div class="badge-card">
+            <div class="badge-icon" style="background: rgba(255,215,0,0.1); border-color: #ffd700;">🏆</div>
+            <div class="badge-name">Gran Inventor</div>
+            <div class="badge-crit">Nota ≥ 9.5</div>
+          </div>
+          <div class="badge-card">
+            <div class="badge-icon" style="background: rgba(0,229,255,0.1); border-color: var(--cyan);">⚡</div>
+            <div class="badge-name">Maker Pro</div>
+            <div class="badge-crit">3 proyectos entregados</div>
+          </div>
+          <div class="badge-card">
+            <div class="badge-icon" style="background: rgba(57,255,133,0.1); border-color: var(--green);">🔧</div>
+            <div class="badge-name">Ingeniero</div>
+            <div class="badge-crit">Primer proyecto aprobado</div>
+          </div>
+          <div class="badge-card">
+            <div class="badge-icon" style="background: rgba(255,77,170,0.1); border-color: var(--pink);">🚀</div>
+            <div class="badge-name">Innovador</div>
+            <div class="badge-crit">Seleccionado en Galería</div>
+          </div>
+          <div class="badge-card">
+            <div class="badge-icon" style="background: rgba(168,85,247,0.1); border-color: var(--purple);">🧠</div>
+            <div class="badge-name">Solucionador</div>
+            <div class="badge-crit">Entrega perfecta</div>
+          </div>
+          <div class="badge-card">
+            <div class="badge-icon" style="background: rgba(255,184,48,0.1); border-color: var(--amber);">⭐</div>
+            <div class="badge-name">Constante</div>
+            <div class="badge-crit">Sin entregas tardías</div>
+          </div>
+        </div>
+        <div class="highlight-box" style="margin-top: 1rem; border-color: rgba(255,77,170,0.2); background: var(--pink-dim);">
+          <div class="highlight-icon" style="color:var(--pink)">★</div>
+          <div class="highlight-text">
+            <strong style="color:var(--pink)">Mecánica de insignias:</strong> Cada insignia se crea como imagen PNG y se agrega 
+            a la diapositiva del estudiante en Google Slides. La tabla de clasificación puede hacerse 
+            con un Google Sheet embebido que se ordena por calificación promedio.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- 06. GUÍA DE ESTILO UX/UI -->
+<section id="ux">
+  <div class="section-header">
+    <div class="section-num">06</div>
+    <div class="section-title-group">
+      <h2 style="color: var(--purple)">Guía de Estilo Visual UX/UI</h2>
+      <p>Paleta de colores, tipografías, principios y disposición de elementos para el Google Site.</p>
+    </div>
+  </div>
+
+  <div class="neon-line" style="background: linear-gradient(90deg, transparent, var(--purple), transparent);"></div>
+
+  <!-- PALETA DE COLORES -->
+  <p style="font-family: var(--mono); font-size: 11px; color: var(--text-muted); margin-bottom: 1.2rem; letter-spacing: 0.05em;">PALETA DE COLORES — MODO OSCURO TECNO</p>
+
+  <div class="palette-grid" style="margin-bottom: 2.5rem;">
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:#080c14"><span class="swatch-hex">#080C14</span></div>
+      <div class="swatch-info"><div class="swatch-name">Noche Digital</div><div class="swatch-role">Fondo principal</div></div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:#111828"><span class="swatch-hex">#111828</span></div>
+      <div class="swatch-info"><div class="swatch-name">Acero Profundo</div><div class="swatch-role">Fondos de sección</div></div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:#00e5ff"><span class="swatch-hex">#00E5FF</span></div>
+      <div class="swatch-info"><div class="swatch-name">Neón Cian</div><div class="swatch-role">Robótica / Nav / CTAs</div></div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:#39ff85"><span class="swatch-hex">#39FF85</span></div>
+      <div class="swatch-info"><div class="swatch-name">Neón Verde</div><div class="swatch-role">Laboratorio / Éxito</div></div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:#ffb830"><span class="swatch-hex">#FFB830</span></div>
+      <div class="swatch-info"><div class="swatch-name">Neón Ámbar</div><div class="swatch-role">Entregas / Alertas</div></div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:#ff4daa"><span class="swatch-hex">#FF4DAA</span></div>
+      <div class="swatch-info"><div class="swatch-name">Neón Rosa</div><div class="swatch-role">Galería / Destaque</div></div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:#a855f7"><span class="swatch-hex">#A855F7</span></div>
+      <div class="swatch-info"><div class="swatch-name">Neón Violeta</div><div class="swatch-role">Nosotros / Acento</div></div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:#e8edf5"><span class="swatch-hex">#E8EDF5</span></div>
+      <div class="swatch-info"><div class="swatch-name">Blanco Tecno</div><div class="swatch-role">Texto principal</div></div>
+    </div>
+  </div>
+
+  <!-- TIPOGRAFÍA -->
+  <p style="font-family: var(--mono); font-size: 11px; color: var(--text-muted); margin-bottom: 1.2rem; letter-spacing: 0.05em;">SISTEMA TIPOGRÁFICO</p>
+
+  <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:1rem; margin-bottom: 2.5rem;">
+
+    <div class="typo-specimen">
+      <div class="typo-label">DISPLAY <span>Syne — Títulos</span></div>
+      <div style="font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; color: var(--cyan); line-height:1.1;">RoboLab<br>Edu</div>
+      <div style="font-size: 11px; color: var(--text-secondary); margin-top: 0.5rem;">Syne 800 — Titulares H1/H2<br>Personalidad: Futurista, Bold, Moderna</div>
+    </div>
+
+    <div class="typo-specimen">
+      <div class="typo-label">BODY <span>Inter — Cuerpo</span></div>
+      <div style="font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 400; color: var(--text-secondary); line-height:1.7;">El laboratorio de robótica digital es tu espacio de creación, experimentación e innovación tecnológica.</div>
+      <div style="font-size: 11px; color: var(--text-secondary); margin-top: 0.5rem;">Inter 400 — Descripciones, párrafos<br>Personalidad: Legible, Neutral, Clara</div>
+    </div>
+
+    <div class="typo-specimen">
+      <div class="typo-label">MONO <span>Space Mono — Código/UI</span></div>
+      <div style="font-family: 'Space Mono', monospace; font-size: 0.85rem; font-weight: 400; color: var(--green); line-height:1.8;">
+        /laboratorio/<br>ENTREGA_OK: true<br>nota = 9.2
+      </div>
+      <div style="font-size: 11px; color: var(--text-secondary); margin-top: 0.5rem;">Space Mono — Etiquetas, código, UI<br>Personalidad: Técnica, Hacker, Precisa</div>
+    </div>
+
+  </div>
+
+  <!-- PRINCIPIOS UX -->
+  <p style="font-family: var(--mono); font-size: 11px; color: var(--text-muted); margin-bottom: 1.2rem; letter-spacing: 0.05em;">PRINCIPIOS UX PARA EDUCACIÓN MEDIA</p>
+
+  <div class="tools-grid" style="margin-bottom: 2.5rem;">
+
+    <div class="card card-cyan">
+      <div class="tool-name" style="margin-bottom:0.5rem;">🎯 Claridad antes que belleza</div>
+      <p class="tool-desc">Los botones de acción principal (Abrir herramienta, Entregar proyecto) deben ser los elementos más visibles. Fondo oscuro + texto/borde neón = máximo contraste. El estudiante sabe a dónde ir en menos de 3 segundos.</p>
+    </div>
+
+    <div class="card card-green">
+      <div class="tool-name" style="margin-bottom:0.5rem;">📱 Mobile-first para Chromebooks</div>
+      <p class="tool-desc">Los equipos de aula típicos tienen pantallas de 11"-13". Diseñar columnas en Google Sites de máximo 2 secciones paralelas. Los embeds de Form y Slides deben configurarse en 100% de ancho para adaptarse correctamente.</p>
+    </div>
+
+    <div class="card card-purple">
+      <div class="tool-name" style="margin-bottom:0.5rem;">🎮 Gamificación visual constante</div>
+      <p class="tool-desc">Usar emojis como iconos accesibles (🔬 🏆 📬 ⚡). Mostrar contadores visibles: "X proyectos en la Galería", "Última entrega hace Y días". Los estudiantes necesitan feedback visual de progreso colectivo.</p>
+    </div>
+
+    <div class="card card-pink">
+      <div class="tool-name" style="margin-bottom:0.5rem;">⚡ Carga ultra-rápida</div>
+      <p class="tool-desc">En Google Sites: no más de 2-3 embeds por página. Preferir imágenes ligeras (WebP cuando sea posible). Videos de YouTube en lugar de subidos directamente. El internet del aula suele ser limitado.</p>
+    </div>
+
+    <div class="card card-amber">
+      <div class="tool-name" style="margin-bottom:0.5rem;">🔗 Jerarquía de acciones</div>
+      <p class="tool-desc">Cada página debe tener exactamente 1 llamada a la acción primaria (CTA principal en color neón) y máximo 2 secundarias (borde transparente). Nunca confundir al estudiante con demasiadas opciones simultáneas.</p>
+    </div>
+
+    <div class="card card-cyan">
+      <div class="tool-name" style="margin-bottom:0.5rem;">🌐 Navegación pegajosa</div>
+      <p class="tool-desc">En Google Sites configurar el encabezado como "fijo" para que la navegación principal siempre sea visible. Usar el encabezado del site con los 4-5 ítems del mapa definido, en modo oscuro si el tema lo permite.</p>
+    </div>
+
+  </div>
+
+  <!-- CONFIGURACIÓN GOOGLE SITES -->
+  <p style="font-family: var(--mono); font-size: 11px; color: var(--text-muted); margin-bottom: 1.2rem; letter-spacing: 0.05em;">CONFIGURACIÓN DE TEMA EN GOOGLE SITES</p>
+
+  <div class="card card-purple">
+    <div class="detail-row">
+      <div class="detail-key">TEMA BASE</div>
+      <div class="detail-val">Seleccionar tema <strong>"Simple"</strong> o <strong>"Modest"</strong> → es más fácil de personalizar. Evitar temas con muchos colores predefinidos.</div>
+    </div>
+    <div class="detail-row">
+      <div class="detail-key">COLOR PRIMARIO</div>
+      <div class="detail-val">Configurar color del tema como <strong>#00E5FF</strong> (Neón Cian). Esto afecta botones y enlaces automáticamente.</div>
+    </div>
+    <div class="detail-row">
+      <div class="detail-key">ENCABEZADO</div>
+      <div class="detail-val">Encabezado fijo: <strong>SÍ</strong>. Imagen de encabezado: imagen oscura con trama de circuitos o gradiente negro-azul. Logo: nombre "RoboLab Edu" en tipografía blanca + emoji ⚡</div>
+    </div>
+    <div class="detail-row">
+      <div class="detail-key">FUENTE DEL SITE</div>
+      <div class="detail-val">Google Sites permite elegir entre sus fuentes: seleccionar <strong>"Space Mono"</strong> para títulos y <strong>"Nunito"</strong> o <strong>"Roboto"</strong> para cuerpo (Inter no está disponible nativamente en Sites)</div>
+    </div>
+    <div class="detail-row">
+      <div class="detail-key">SECCIONES</div>
+      <div class="detail-val">Alternar entre fondos <strong>oscuros (#080C14 equiv.)</strong> y <strong>más claros (#111828 equiv.)</strong> para dar ritmo visual entre secciones. Sites permite configurar el color de fondo de cada bloque.</div>
+    </div>
+    <div class="detail-row" style="border-bottom:none">
+      <div class="detail-key">BOTONES CTA</div>
+      <div class="detail-val">Usar el elemento "Botón" de Sites. Texto en mayúsculas breves: <strong>"ABRIR TINKERCAD →"</strong>, <strong>"ENVIAR PROYECTO →"</strong>, <strong>"VER GALERÍA →"</strong></div>
+    </div>
+  </div>
+
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">
+    <strong>ROBOLAB.EDU</strong> — Documento de Arquitectura Técnica v1.0
+  </div>
+  <div class="footer-note">
+    Plataforma No-Code · Google Sites + Forms + Sheets + Slides + Drive · Costo cero · Educación Media
+  </div>
+</footer>
+
+<script>
+  // NAV SCROLL HIGHLIGHT
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('nav a');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const link = document.querySelector(`nav a[href="#${entry.target.id}"]`);
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { threshold: 0.3 });
+
+  sections.forEach(s => observer.observe(s));
+
+  // SMOOTH SCROLL
+  document.querySelectorAll('nav a').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const id = a.getAttribute('href').slice(1);
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  // TABS
+  function switchTab(btn, panelId) {
+    const card = btn.closest('.card');
+    card.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    card.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(panelId)?.classList.add('active');
+  }
+
+  // SLIDES MOCK CLICK
+  document.querySelectorAll('.slide-thumb').forEach((thumb, i) => {
+    thumb.addEventListener('click', () => {
+      document.querySelectorAll('.slide-thumb').forEach(t => t.classList.remove('active'));
+      thumb.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>
